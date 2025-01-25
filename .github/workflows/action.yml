@@ -23,8 +23,10 @@ jobs:
         id: download_file
         uses: suisei-cn/actions-download-file@v1.6.0
         with:
-          url: ${{ steps.read_link.outputs.content }}
-          target: downloaded_file
+          url: ${{ steps.read_link.outputs.content }}  # URL from link.txt
+          target: downloaded_file.mkv  # Explicitly set the filename
+          auto-match: false
+          retry-times: 0
 
       # Step 4: Send the file to Telegram
       - name: Send File to Telegram
@@ -32,9 +34,9 @@ jobs:
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}  # Your Telegram bot token
           to: ${{ secrets.TELEGRAM_CHAT_ID }}      # Your Telegram chat ID
-          document: downloaded_file                # Path to the downloaded file
+          document: downloaded_file.mkv            # Path to the downloaded file
           message: 'Here is the file you requested.'  # Optional message
 
       # Step 5: Clean up the downloaded file
       - name: Cleanup
-        run: rm -rf downloaded_file
+        run: rm -rf downloaded_file.mkv

@@ -1,29 +1,42 @@
-name: Deploy Model to Docker Hub
+name: Upload File to Docker Hub
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering of the workflow
+
+env:
+  DOCKER_USERNAME: vigabots # Your Docker Hub username
+  DOCKER_IMAGE_NAME: my-video-file # Name of the Docker image
+  FILE_URL: https://pub-c457a64d90034e34aba3bb1cb1734650.r2.dev/Ramayana.The.Legend.of.Prince.Rama.2025.1080p.Hindi.WEB.DL.5.1.x264.HDHub4u.Tv.mkv # URL of the file to download
 
 jobs:
-  build_and_push:
+  upload-file:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: vigabots
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build Docker image with model
+      - name: Download file
         run: |
-          docker build -t vigabots/qwen2.5:latest .
+          wget $FILE_URL -O video-file.mkv
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      - name: Create Dockerfile
+        run: |
+          echo "FROM scratch" > Dockerfile
+          echo "COPY video-file.mkv /video-file.mkv" >> Dockerfile
+
+      - name: Build Docker image
+        run: |
+          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest .
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push vigabots/qwen2.5:latest
+          docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest
+
+      - name: Logout from Docker Hub
+        run: |
+          docker logout

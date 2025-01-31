@@ -1,1 +1,32 @@
-a
+name: Deploy Model to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u vigabots --password-stdin
+
+      - name: Pull Ollama Docker image
+        run: |
+          docker pull ollama/ollama:latest
+
+      - name: Build Docker image with model
+        run: |
+          docker build -t vigabots/qwen2.5-1m-abliterated:7b .
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push vigabots/qwen2.5-1m-abliterated:7b

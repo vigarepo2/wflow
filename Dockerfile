@@ -1,4 +1,10 @@
 FROM ollama/ollama:latest
 
-# Pull the specific model
-RUN ollama pull huihui_ai/qwen2.5-1m-abliterated:7b
+# Copy the entry point script into the container
+COPY entrypoint.sh /entrypoint.sh
+
+# Make the script executable
+RUN chmod +x /entrypoint.sh
+
+# Set the entry point to the script
+ENTRYPOINT ["/entrypoint.sh"]

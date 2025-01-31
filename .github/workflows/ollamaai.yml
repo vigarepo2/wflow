@@ -17,9 +17,13 @@ jobs:
       - name: Log in to Docker Hub
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u vigabots --password-stdin
 
-      - name: Pull Ollama Docker image
+      - name: Install Ollama CLI
         run: |
-          docker pull ollama/ollama:latest
+          curl -sSL https://ollama.com/install.sh | bash
+
+      - name: Pull the model using Ollama
+        run: |
+          ollama pull huihui_ai/qwen2.5-1m-abliterated:7b
 
       - name: Build Docker image with model
         run: |

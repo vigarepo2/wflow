@@ -16,27 +16,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download file
+      - name: Install pv (Pipe Viewer)
+        run: sudo apt-get install -y pv
+
+      - name: Download file with progress bar
         run: |
-          wget $FILE_URL -O video-file.mkv
+          echo -e "\033[35mDownloading file...\033[0m"
+          wget -q --show-progress -O video-file.mkv $FILE_URL | pv -petr > /dev/null
 
       - name: Login to Docker Hub
         run: |
+          echo -e "\033[35mLogging into Docker Hub...\033[0m"
           echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
       - name: Create Dockerfile
         run: |
+          echo -e "\033[35mCreating Dockerfile...\033[0m"
           echo "FROM scratch" > Dockerfile
           echo "COPY video-file.mkv /video-file.mkv" >> Dockerfile
 
-      - name: Build Docker image
+      - name: Build Docker image with progress
         run: |
-          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest .
+          echo -e "\033[35mBuilding Docker image...\033[0m"
+          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest . | pv -petr > /dev/null
 
-      - name: Push Docker image to Docker Hub
+      - name: Push Docker image to Docker Hub with progress
         run: |
-          docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest
+          echo -e "\033[35mPushing Docker image to Docker Hub...\033[0m"
+          docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest | pv -petr > /dev/null
 
       - name: Logout from Docker Hub
         run: |
+          echo -e "\033[35mLogging out from Docker Hub...\033[0m"
           docker logout

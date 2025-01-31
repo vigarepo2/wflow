@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y \
 # Install Ollama CLI
 RUN curl -sSL https://ollama.com/install.sh | bash
 
-# Pull the model using Ollama
-RUN ollama pull huihui_ai/qwen2.5-1m-abliterated:7b
-
-# Set the default command to run Ollama
-CMD ["ollama", "serve"]
+# Set the default command to run Ollama and pull the model
+CMD ollama serve & \
+    sleep 5 && \
+    ollama pull huihui_ai/qwen2.5-1m-abliterated:7b && \
+    ollama serve

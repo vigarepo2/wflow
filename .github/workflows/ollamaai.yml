@@ -20,10 +20,15 @@ jobs:
           username: vigabots
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Removed the Install Ollama CLI step
-      # Removed the Pull the model using Ollama step
+      - name: Install Ollama CLI
+        run: |
+          curl -sSL https://ollama.com/install.sh | bash
 
-      - name: Build Docker image
+      - name: Pull the model using Ollama
+        run: |
+          ollama pull huihui_ai/qwen2.5-1m-abliterated:7b
+
+      - name: Build Docker image with model
         run: |
           docker build -t vigabots/qwen2.5:latest .
 

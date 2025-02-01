@@ -6,7 +6,7 @@ on:
       model_name:
         description: 'Ollama Model Name'
         required: true
-        default: 'qwen'
+        default: 'deepseek-r1:1.5b'
       huggingface_repo:
         description: 'Hugging Face Repository Name (Private)'
         required: true
@@ -33,30 +33,37 @@ jobs:
       - name: Download Ollama Model
         run: |
           ollama pull ${{ inputs.model_name }}
-          ollama export ${{ inputs.model_name }} ./model
 
-      # Step 4: Authenticate with Hugging Face
+      # Step 4: Locate the model files
+      - name: Locate Model Files
+        id: locate_model
+        run: |
+          MODEL_DIR=$(ollama show ${{ inputs.model_name }} --path)
+          echo "Model directory: $MODEL_DIR"
+          echo "MODEL_DIR=$MODEL_DIR" >> $GITHUB_ENV
+
+      # Step 5: Authenticate with Hugging Face
       - name: Authenticate with Hugging Face
         run: |
           huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN }}
 
-      # Step 5: Upload the model to Hugging Face
+      # Step 6: Upload the model to Hugging Face
       - name: Upload Model to Hugging Face
         run: |
           git lfs install
-          huggingface-cli repo create ${{ inputs.huggingface_repo }} --type model --private
+          huggingface-cli repo create ${{ inputs.huggingface_repo }} --type model --private || true
           git clone https://huggingface.co/${{ inputs.huggingface_repo }}
-          cp -r ./model/* ${{ inputs.huggingface_repo }}/
+          cp -r ${{ env.MODEL_DIR }}/* ${{ inputs.huggingface_repo }}/
           cd ${{ inputs.huggingface_repo }}
           echo "# Model Card for ${{ inputs.model_name }}" > README.md
           echo "This is the ${{ inputs.model_name }} model downloaded via Ollama and uploaded to Hugging Face." >> README.md
           git add .
-          git config --global user.email "help@wikram.in"
+          git config --global user.email "github-actions@example.com"
           git config --global user.name "GitHub Actions"
           git commit -m "Upload ${{ inputs.model_name }} model"
           git push
 
-      # Step 6: Clean up
+      # Step 7: Clean up
       - name: Clean Up
         run: |
-          rm -rf ./model
+          rm -rf ${{ env.MODEL_DIR }}

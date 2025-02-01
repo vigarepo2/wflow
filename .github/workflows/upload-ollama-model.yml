@@ -47,12 +47,19 @@ jobs:
         run: |
           huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN }}
 
-      # Step 6: Upload the model to Hugging Face
+      # Step 6: Create or Clone the Hugging Face Repository
+      - name: Create or Clone Hugging Face Repository
+        run: |
+          # Check if the repository already exists
+          if ! huggingface-cli repo ls | grep -q "${{ inputs.huggingface_repo }}"; then
+            huggingface-cli repo create ${{ inputs.huggingface_repo }} --type model
+          fi
+          # Clone the repository using SSH for authentication
+          git clone https://huggingface.co/${{ inputs.huggingface_repo }}
+
+      # Step 7: Upload the model to Hugging Face
       - name: Upload Model to Hugging Face
         run: |
-          git lfs install
-          huggingface-cli repo create ${{ inputs.huggingface_repo }} --type model --private || true
-          git clone https://huggingface.co/${{ inputs.huggingface_repo }}
           cp -r ${{ env.MODEL_DIR }}/* ${{ inputs.huggingface_repo }}/
           cd ${{ inputs.huggingface_repo }}
           echo "# Model Card for ${{ inputs.model_name }}" > README.md
@@ -61,9 +68,9 @@ jobs:
           git config --global user.email "github-actions@example.com"
           git config --global user.name "GitHub Actions"
           git commit -m "Upload ${{ inputs.model_name }} model"
-          git push
+          git push https://$${{ secrets.HUGGINGFACE_TOKEN }}@huggingface.co/${{ inputs.huggingface_repo }}
 
-      # Step 7: Clean up
+      # Step 8: Clean up
       - name: Clean Up
         run: |
           rm -rf ${{ env.MODEL_DIR }}

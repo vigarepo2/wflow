@@ -1,0 +1,34 @@
+name: Run Docker Image Workflow
+
+on:
+  # Trigger the workflow on push to the main branch or manually
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  run-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository (optional, if needed)
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to Docker Hub (optional, if pulling from a private registry)
+      - name: Log in to Docker Hub
+        if: false  # Set this to true if you need to log in to a private registry
+        run: echo "${{ secrets.DOCKER_HUB_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      # Step 3: Pull the Docker image
+      - name: Pull Docker Image
+        run: |
+          echo "Pulling Docker image vigabots/viga:latest..."
+          docker pull vigabots/viga:latest
+
+      # Step 4: Run the Docker container
+      - name: Run Docker Container
+        run: |
+          echo "Running Docker container from image vigabots/viga:latest..."
+          docker run --rm vigabots/viga:latest

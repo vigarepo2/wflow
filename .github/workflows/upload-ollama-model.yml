@@ -38,7 +38,7 @@ jobs:
       - name: Locate Model Files
         id: locate_model
         run: |
-          MODEL_DIR=$(ollama show ${{ inputs.model_name }} --path)
+          MODEL_DIR=~/.ollama/models/${{ inputs.model_name }}
           echo "Model directory: $MODEL_DIR"
           echo "MODEL_DIR=$MODEL_DIR" >> $GITHUB_ENV
 

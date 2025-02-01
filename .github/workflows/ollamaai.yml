@@ -1,51 +1,69 @@
-name: Upload File to Docker Hub
+name: Ollama Model to Docker Hub
 
 on:
-  workflow_dispatch: # Allows manual triggering of the workflow
-
-env:
-  DOCKER_USERNAME: vigabots # Your Docker Hub username
-  DOCKER_IMAGE_NAME: my-video-file # Name of the Docker image
-  FILE_URL: https://pub-c457a64d90034e34aba3bb1cb1734650.r2.dev/Ramayana.The.Legend.of.Prince.Rama.2025.1080p.Hindi.WEB.DL.5.1.x264.HDHub4u.Tv.mkv # URL of the file to download
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+  workflow_dispatch:  # Allow manual triggering of the workflow
 
 jobs:
-  upload-file:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Check out the repository (if needed)
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install pv (Pipe Viewer)
-        run: sudo apt-get install -y pv
+      # Step 2: Install Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-      - name: Download file with progress bar
+      # Step 3: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: vigabots  # Your Docker Hub username
+          password: ${{ secrets.DOCKER_PASSWORD }}  # Docker Hub password from GitHub Secrets
+
+      # Step 4: Install Ollama CLI
+      - name: Install Ollama CLI
         run: |
-          echo -e "\033[35mDownloading file...\033[0m"
-          wget -q --show-progress -O video-file.mkv $FILE_URL | pv -petr > /dev/null
+          curl https://ollama.ai/install.sh | sh
+          sudo ln -s /usr/local/bin/ollama /usr/bin/ollama
 
-      - name: Login to Docker Hub
+      # Step 5: Pull the Ollama model
+      - name: Pull Ollama model
         run: |
-          echo -e "\033[35mLogging into Docker Hub...\033[0m"
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          ollama pull huihui_ai/qwen2.5-1m-abliterated:7b
 
+      # Step 6: Copy the model files to a temporary directory
+      - name: Copy model files
+        run: |
+          mkdir -p /tmp/ollama-model/models
+          cp -r /usr/share/ollama/.ollama/models/* /tmp/ollama-model/models/
+
+      # Step 7: Create a Dockerfile
       - name: Create Dockerfile
         run: |
-          echo -e "\033[35mCreating Dockerfile...\033[0m"
-          echo "FROM scratch" > Dockerfile
-          echo "COPY video-file.mkv /video-file.mkv" >> Dockerfile
+          cat <<EOF > /tmp/ollama-model/Dockerfile
+          FROM ollama/ollama:latest
+          COPY ./models /usr/local/ollama/models
+          CMD ["ollama", "run", "huihui_ai/qwen2.5-1m-abliterated:7b"]
+          EOF
 
-      - name: Build Docker image with progress
+      # Step 8: Pull the existing Docker image (if it exists)
+      - name: Pull existing Docker image (if exists)
         run: |
-          echo -e "\033[35mBuilding Docker image...\033[0m"
-          docker build -t $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest . | pv -petr > /dev/null
+          docker pull vigabots/qwen2.5:latest || echo "No existing image found, continuing..."
 
-      - name: Push Docker image to Docker Hub with progress
+      # Step 9: Build the Docker image
+      - name: Build Docker image
         run: |
-          echo -e "\033[35mPushing Docker image to Docker Hub...\033[0m"
-          docker push $DOCKER_USERNAME/$DOCKER_IMAGE_NAME:latest | pv -petr > /dev/null
+          cd /tmp/ollama-model
+          docker build -t vigabots/qwen2.5:latest .
 
-      - name: Logout from Docker Hub
+      # Step 10: Push the Docker image to Docker Hub
+      - name: Push Docker image to Docker Hub
         run: |
-          echo -e "\033[35mLogging out from Docker Hub...\033[0m"
-          docker logout
+          docker push vigabots/qwen2.5:latest

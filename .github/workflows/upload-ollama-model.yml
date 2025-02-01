@@ -1,0 +1,62 @@
+name: Upload Ollama Model to Hugging Face
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Ollama Model Name'
+        required: true
+        default: 'qwen'
+      huggingface_repo:
+        description: 'Hugging Face Repository Name (Private)'
+        required: true
+        default: 'your-username/your-private-repo'
+
+jobs:
+  upload-model:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install dependencies
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-lfs
+          curl https://ollama.ai/install.sh | sh
+          pip install huggingface_hub
+
+      # Step 3: Download the Ollama model
+      - name: Download Ollama Model
+        run: |
+          ollama pull ${{ inputs.model_name }}
+          ollama export ${{ inputs.model_name }} ./model
+
+      # Step 4: Authenticate with Hugging Face
+      - name: Authenticate with Hugging Face
+        run: |
+          huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN }}
+
+      # Step 5: Upload the model to Hugging Face
+      - name: Upload Model to Hugging Face
+        run: |
+          git lfs install
+          huggingface-cli repo create ${{ inputs.huggingface_repo }} --type model --private
+          git clone https://huggingface.co/${{ inputs.huggingface_repo }}
+          cp -r ./model/* ${{ inputs.huggingface_repo }}/
+          cd ${{ inputs.huggingface_repo }}
+          echo "# Model Card for ${{ inputs.model_name }}" > README.md
+          echo "This is the ${{ inputs.model_name }} model downloaded via Ollama and uploaded to Hugging Face." >> README.md
+          git add .
+          git config --global user.email "github-actions@example.com"
+          git config --global user.name "GitHub Actions"
+          git commit -m "Upload ${{ inputs.model_name }} model"
+          git push
+
+      # Step 6: Clean up
+      - name: Clean Up
+        run: |
+          rm -rf ./model

@@ -10,7 +10,7 @@ on:
       huggingface_repo:
         description: 'Hugging Face Repository Name (Private)'
         required: true
-        default: 'your-username/your-private-repo'
+        default: 'vigarepo2/ollama'
 
 jobs:
   upload-model:
@@ -51,7 +51,7 @@ jobs:
           echo "# Model Card for ${{ inputs.model_name }}" > README.md
           echo "This is the ${{ inputs.model_name }} model downloaded via Ollama and uploaded to Hugging Face." >> README.md
           git add .
-          git config --global user.email "github-actions@example.com"
+          git config --global user.email "help@wikram.in"
           git config --global user.name "GitHub Actions"
           git commit -m "Upload ${{ inputs.model_name }} model"
           git push

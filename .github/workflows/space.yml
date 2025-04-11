@@ -1,0 +1,39 @@
+name: Verify Runner Specifications and Network Details
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify-specs:
+    runs-on: [self-hosted, 96-core]
+    steps:
+      - name: Display CPU Information
+        run: |
+          echo "=== CPU Information ==="
+          lscpu
+
+      - name: Display Memory Information
+        run: |
+          echo "=== Memory Information ==="
+          free -h
+
+      - name: Display Disk Usage
+        run: |
+          echo "=== Disk Usage ==="
+          df -h
+
+      - name: Install Speedtest CLI
+        run: |
+          echo "=== Installing Speedtest CLI ==="
+          sudo apt-get update
+          sudo apt-get install -y speedtest-cli
+
+      - name: Perform Internet Speed Test
+        run: |
+          echo "=== Internet Speed Test ==="
+          speedtest-cli
+
+      - name: Retrieve Public IP and ISP Information
+        run: |
+          echo "=== Public IP and ISP Information ==="
+          curl -s https://ipinfo.io
